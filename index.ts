@@ -1982,8 +1982,7 @@ export default function (pi: ExtensionAPI) {
   const defaultIsolated = askConf?.defaultIsolated ?? false;
   askClaudeToolName = askConf?.name ?? "AskClaude";
 
-  // Use api.typebox for TypeBox access (shared module), or fall back to direct import
-  const TypeBox = (pi as any).typebox ?? Type;
+  const TypeBox = Type;
 
   const modeValues = allowFull
     ? (["read", "full", "none"] as const)
