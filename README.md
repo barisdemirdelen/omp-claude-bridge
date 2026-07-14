@@ -11,7 +11,7 @@ An [oh-my-pi](https://github.com/earendil-works/oh-my-pi) (`omp`) extension that
 
 This is a port of [`pi-claude-bridge`](https://github.com/elidickinson/pi-claude-bridge) by [Eli Dickinson](https://github.com/elidickinson), which targets the [`pi`](https://pi.dev) coding agent. This fork adapts it to `oh-my-pi`'s extension API, event names, and config paths.
 
-The port was performed by an AI coding agent (Claude), driven by a human maintainer reviewing and directing the work. If something looks off, that's likely why — issues and corrections are welcome.
+The initial port was performed by an AI coding agent (Deepseek V4 Pro), driven by a human maintainer reviewing and directing the work. If something looks off, that's likely why — issues and corrections are welcome.
 
 ## Install
 
