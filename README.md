@@ -18,15 +18,15 @@ The initial port was performed by an AI coding agent (Deepseek V4 Pro), driven b
 Clone (or copy) this repo into omp's extensions directory and install dependencies:
 
 ```sh
-git clone https://github.com/barisdemirdelen/omp-claude-bridge.git ~/.omp/agent/extensions/claude-bridge
-cd ~/.omp/agent/extensions/claude-bridge
+git clone https://github.com/barisdemirdelen/omp-claude-bridge.git ~/.omp/agent/extensions/omp-claude-bridge
+cd ~/.omp/agent/extensions/omp-claude-bridge
 npm install
 ```
 
 `omp` auto-discovers extensions under `~/.omp/agent/extensions/`. Alternatively, load it explicitly for a single run:
 
 ```sh
-omp -e /path/to/claude-bridge/index.ts
+omp -e /path/to/omp-claude-bridge/index.ts
 ```
 
 ## Provider
