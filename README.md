@@ -18,7 +18,7 @@ The port was performed by an AI coding agent (Claude), driven by a human maintai
 Clone (or copy) this repo into omp's extensions directory and install dependencies:
 
 ```sh
-git clone <this-repo-url> ~/.omp/agent/extensions/claude-bridge
+git clone https://github.com/barisdemirdelen/omp-claude-bridge.git ~/.omp/agent/extensions/claude-bridge
 cd ~/.omp/agent/extensions/claude-bridge
 npm install
 ```
