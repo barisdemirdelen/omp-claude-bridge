@@ -162,6 +162,9 @@ const SDK_TO_PI_TOOL_NAME: Record<string, string> = {
   bash: "bash",
 };
 
+const TOOL_NAMING_CLARIFICATION =
+  "Your Read, Write, Edit, Bash, Grep, and Glob tools (and all other tools) are exposed as MCP functions with an `mcp__custom-tools__` prefix (e.g. `mcp__custom-tools__edit` IS your Edit tool, `mcp__custom-tools__bash` IS your Bash tool). There is no separate built-in tool alongside them — always call the `mcp__custom-tools__*` function from your tool list.";
+
 let providerSettings: NonNullable<Config["provider"]> = {};
 let longContextSettings: LongContextSettings = {
   plan: "pro",
@@ -657,9 +660,16 @@ function resolveMcpTools(
   if (!context.tools)
     return { mcpTools, customToolNameToSdk, customToolNameToPi };
 
+  // omp's own MCP tool flattening already prefixes external MCP tools as
+  // `mcp__<server>_<tool>`. Re-wrapping that verbatim as an inner tool name of
+  // our own `custom-tools` MCP server would double the `mcp__` prefix on the
+  // wire (`mcp__custom-tools__mcp__<server>_<tool>`), so strip one layer here.
   for (const tool of context.tools) {
     if (tool.name === excludeToolName) continue;
-    const sdkName = `${MCP_TOOL_PREFIX}${tool.name}`;
+    const wireName = tool.name.startsWith("mcp__")
+      ? tool.name.slice("mcp__".length)
+      : tool.name;
+    const sdkName = `${MCP_TOOL_PREFIX}${wireName}`;
     mcpTools.push(tool);
     customToolNameToSdk.set(tool.name, sdkName);
     customToolNameToSdk.set(tool.name.toLowerCase(), sdkName);
@@ -676,7 +686,9 @@ function buildMcpServers(
 ): Record<string, ReturnType<typeof createSdkMcpServer>> | undefined {
   if (!tools.length) return undefined;
   const mcpTools = tools.map((tool) => ({
-    name: tool.name,
+    name: tool.name.startsWith("mcp__")
+      ? tool.name.slice("mcp__".length)
+      : tool.name,
     description: tool.description,
     inputSchema: jsonSchemaToZodShape(tool.parameters),
     handler: async () => {
@@ -1400,9 +1412,11 @@ function streamClaudeAgentSdk(
   const skillsAppend = appendSystemPrompt
     ? extractSkillsBlock(systemPromptStr)
     : undefined;
-  const appendParts = [agentsAppend, skillsAppend].filter(
-    (part): part is string => Boolean(part),
-  );
+  const appendParts = [
+    TOOL_NAMING_CLARIFICATION,
+    agentsAppend,
+    skillsAppend,
+  ].filter((part): part is string => Boolean(part));
   const systemPromptAppend =
     appendParts.length > 0 ? appendParts.join("\n\n") : undefined;
 
