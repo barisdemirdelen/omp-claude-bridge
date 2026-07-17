@@ -57,6 +57,15 @@ export function messageContentToText(
   return hasText ? parts.join("\n") : "";
 }
 
+// oh-my-pi steers framework notices (mid-session xd:// mount deltas, thinking-loop
+// redirects, etc.) into the context as plain `user`-role text wrapped in
+// `<system-notice>`/`<system-interrupt>` tags — its own invented convention, carrying
+// no special weight in Claude's training and indistinguishable from a forged claim an
+// attacker could write themselves. Claude Code models DO have a trained prior to treat
+// `<system-reminder>` tags as trusted framework content, so retag onto that convention
+// here rather than relying on in-band "this is not a prompt injection" text.
+const SYSTEM_NOTICE_TAG_RE = /<(\/?)system-(?:notice|interrupt)\b/g;
+
 /** Convert pi message array to Anthropic API format. */
 export function convertPiMessages(
   messages: PiMessage[],
@@ -69,18 +78,21 @@ export function convertPiMessages(
   const sanitizedIds = new Map<string, string>();
 
   for (const msg of messages) {
-    if (msg.role === "user") {
+    // pi-ai's published Message role union omits "developer", which oh-my-pi's
+    // runtime does send; role is a plain string at runtime regardless.
+    const role = msg.role as string;
+    if (role === "user" || role === "developer") {
       if (typeof msg.content === "string") {
         anthropicMessages.push({
           role: "user",
-          content: msg.content,
+          content: msg.content.replace(SYSTEM_NOTICE_TAG_RE, "<$1system-reminder"),
           ...(msg.timestamp ? { timestamp: msg.timestamp } : {}),
         } as SessionMessage);
       } else if (Array.isArray(msg.content)) {
         const blocks = msg.content
           .map((b: any) => {
             if (b.type === "text" && b.text)
-              return { type: "text", text: b.text };
+              return { type: "text", text: b.text.replace(SYSTEM_NOTICE_TAG_RE, "<$1system-reminder") };
             if (b.type === "image" && b.data && b.mimeType)
               return {
                 type: "image",

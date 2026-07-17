@@ -7,6 +7,9 @@
     "url": "https://github.com/barisdemirdelen/omp-claude-bridge.git"
   },
   "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
   "type": "module",
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.141",
@@ -20,6 +23,10 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "^26.1.1"
+    "@earendil-works/pi-ai": "^0.80.7",
+    "@earendil-works/pi-coding-agent": "^0.80.7",
+    "@earendil-works/pi-tui": "^0.80.7",
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.3"
   }
 }

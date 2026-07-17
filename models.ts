@@ -115,7 +115,6 @@ export const MODELS: ProviderModelConfig[] = MODEL_IDS_IN_ORDER.map((id) => {
     id: entry.id,
     name: entry.name,
     reasoning: entry.reasoning,
-    thinking: entry.thinking as ProviderModelConfig["thinking"],
     input: entry.input,
     cost: entry.cost,
     contextWindow: entry.contextWindow,

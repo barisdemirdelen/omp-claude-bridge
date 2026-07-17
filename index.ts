@@ -312,7 +312,10 @@ function extractAllToolResults(context: Context): McpResult[] {
 
 function extractUserPrompt(messages: Context["messages"]): string | null {
   const last = messages[messages.length - 1];
-  if (!last || last.role !== "user") return null;
+  // pi-ai's published Message role union omits "developer", which oh-my-pi's
+  // runtime does send; role is a plain string at runtime regardless.
+  const lastRole = last?.role as string | undefined;
+  if (!last || (lastRole !== "user" && lastRole !== "developer")) return null;
   if (typeof last.content === "string") return last.content;
   return messageContentToText(last.content) || "";
 }
@@ -321,7 +324,8 @@ function extractUserPromptBlocks(
   messages: Context["messages"],
 ): ContentBlockParam[] | null {
   const last = messages[messages.length - 1];
-  if (!last || last.role !== "user") return null;
+  const lastRole = last?.role as string | undefined;
+  if (!last || (lastRole !== "user" && lastRole !== "developer")) return null;
   if (typeof last.content === "string") {
     debug(`extractUserPromptBlocks: content is string (length=${last.content.length})`);
     return null;
@@ -370,31 +374,6 @@ async function* wrapPromptStream(
   };
 }
 
-function newAssistantOutput(
-  model: Model<any>,
-  text: string,
-  stopReason: AssistantMessage["stopReason"],
-  errorMessage?: string,
-): AssistantMessage {
-  return {
-    role: "assistant",
-    content: text ? [{ type: "text", text }] : [],
-    api: model.api,
-    provider: model.provider,
-    model: model.id,
-    usage: {
-      input: 0,
-      output: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-      totalTokens: 0,
-      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-    },
-    stopReason,
-    ...(errorMessage ? { errorMessage } : {}),
-    timestamp: Date.now(),
-  };
-}
 
 function verifyWrittenSession(
   jsonlPath: string,
@@ -1249,7 +1228,11 @@ function streamClaudeAgentSdk(
 ): AssistantMessageEventStream {
   const stream = newAssistantMessageEventStream();
 
-  const lastMsgRole = context.messages[context.messages.length - 1]?.role;
+  // pi-ai's published Message role union omits "developer", which oh-my-pi's
+  // runtime does send; role is a plain string at runtime regardless.
+  const lastMsgRole = context.messages[context.messages.length - 1]?.role as
+    | string
+    | undefined;
   debug(
     `provider: streamClaudeAgentSdk called, activeQuery=${!!ctx().activeQuery}, lastMsgRole=${lastMsgRole}, isReentrant=${ctx().activeQuery !== null}`,
   );
@@ -1260,7 +1243,7 @@ function streamClaudeAgentSdk(
   const resultCtx =
     allResults.length > 0 ? contextForToolResults(allResults) : undefined;
   const isReentrantUserQuery =
-    activeQuery && lastMsgRole === "user" && allResults.length === 0;
+    activeQuery && (lastMsgRole === "user" || lastMsgRole === "developer") && allResults.length === 0;
   if (isReentrantUserQuery) {
     debug(
       `provider: active query user-only call treated as reentrant fresh query, waitingHandlers=${ctx().pendingToolCalls.size}, ctx.msgs=${context.messages.length}`,
@@ -1311,7 +1294,7 @@ function streamClaudeAgentSdk(
       );
     }
 
-    if (lastMsgRole === "user") {
+    if (lastMsgRole === "user" || lastMsgRole === "developer") {
       const userPrompt = extractUserPrompt(context.messages);
       if (userPrompt) {
         resultCtx.deferredUserMessages.push(userPrompt);
@@ -1404,8 +1387,12 @@ function streamClaudeAgentSdk(
   const mcpServers = buildMcpServers(mcpTools, queryCtx);
   const appendSystemPrompt = providerSettings.appendSystemPrompt !== false;
 
-  // oh-my-pi systemPrompt is string[], join for compatibility
-  const systemPromptStr = context.systemPrompt?.join("\n\n");
+  // pi-ai's published Context.systemPrompt type is `string`, but oh-my-pi's
+  // runtime actually sends `string[]`.
+  const systemPromptParts = context.systemPrompt as unknown as
+    | string[]
+    | undefined;
+  const systemPromptStr = systemPromptParts?.join("\n\n");
   const agentsAppend = appendSystemPrompt
     ? extractAgentsAppend()
     : undefined;
@@ -1950,9 +1937,11 @@ export default function (pi: ExtensionAPI) {
   };
 
   // oh-my-pi SessionStartEvent has no `reason` field — clear unconditionally
-  pi.on("session_start", (event, ctx) => {
+  pi.on("session_start", (_event, ctx) => {
     piUI = ctx.ui;
-    cachedSystemPrompt = ctx.getSystemPrompt();
+    // ctx.getSystemPrompt()'s published return type is `string`, but oh-my-pi's
+    // runtime actually returns `string[]`.
+    cachedSystemPrompt = ctx.getSystemPrompt() as unknown as string[];
     clearSession("session_start");
   });
   pi.on("session_shutdown", () => clearSession("session_shutdown"));
