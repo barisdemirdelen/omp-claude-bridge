@@ -12,6 +12,7 @@ import { loadConfig } from "./config.js";
 import { createRuntime } from "./runtime.js";
 import { createStreamClaudeAgentSdk } from "./provider.js";
 import { registerAskClaudeTool } from "./askclaude.js";
+import { toPromptArray } from "./prompt.js";
 
 export default function (pi: ExtensionAPI) {
   process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
@@ -42,9 +43,9 @@ export default function (pi: ExtensionAPI) {
   // oh-my-pi SessionStartEvent has no `reason` field — clear unconditionally
   pi.on("session_start", (_event, ctx) => {
     runtime.ui = ctx.ui;
-    // ctx.getSystemPrompt()'s published return type is `string`, but oh-my-pi's
-    // runtime actually returns `string[]`.
-    runtime.cachedSystemPrompt = ctx.getSystemPrompt() as unknown as string[];
+    // getSystemPrompt()'s published return type is `string`, but oh-my-pi's
+    // runtime returns `string[]`; toPromptArray accepts either.
+    runtime.cachedSystemPrompt = toPromptArray(ctx.getSystemPrompt());
     clearSession("session_start");
   });
   pi.on("session_shutdown", () => clearSession("session_shutdown"));
@@ -84,4 +85,8 @@ export default function (pi: ExtensionAPI) {
   if (config.askClaude?.enabled !== false) {
     registerAskClaudeTool(pi, runtime, config);
   }
+
+  // Returned for testability (index.test.ts inspects lifecycle effects). oh-my-pi
+  // ignores the return value of an extension entry.
+  return runtime;
 }

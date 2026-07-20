@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Message as PiMessage } from "@earendil-works/pi-ai";
 import {
+  STEERED_NOTICE_TAGS,
   convertPiMessages,
   mapPiToolNameToSdk,
   messageContentToText,
@@ -53,6 +54,32 @@ describe("convertPiMessages", () => {
     ]);
     const blocks = anthropicMessages[0].content as Array<{ text?: string }>;
     expect(blocks[0].text).toBe("<system-reminder>x</system-reminder>");
+  });
+
+  // Data-driven: every enumerated oh-my-pi steered-notice tag must retag to
+  // <system-reminder>. Adding a tag to STEERED_NOTICE_TAGS auto-extends this.
+  test.each([...STEERED_NOTICE_TAGS])(
+    "retags <%s> (open and close) to system-reminder",
+    (tag) => {
+      const { anthropicMessages } = convert([
+        { role: "user", content: `<${tag}>body</${tag}>` },
+      ]);
+      expect(anthropicMessages[0].content).toBe(
+        "<system-reminder>body</system-reminder>",
+      );
+    },
+  );
+
+  test("retags tags carrying attributes", () => {
+    const { anthropicMessages } = convert([
+      {
+        role: "user",
+        content: '<system-interrupt reason="rule_violation" rule="x">stop</system-interrupt>',
+      },
+    ]);
+    expect(anthropicMessages[0].content).toBe(
+      '<system-reminder reason="rule_violation" rule="x">stop</system-reminder>',
+    );
   });
 
   test("user image blocks become base64 image sources", () => {

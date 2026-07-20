@@ -18,6 +18,17 @@ import { extractSkillsBlock } from "./skills.js";
 export const TOOL_NAMING_CLARIFICATION =
   "Your Read, Write, Edit, Bash, Grep, and Glob tools (and all other tools) are exposed as MCP functions with an `mcp__custom-tools__` prefix (e.g. `mcp__custom-tools__edit` IS your Edit tool, `mcp__custom-tools__bash` IS your Bash tool). There is no separate built-in tool alongside them — always call the `mcp__custom-tools__*` function from your tool list.";
 
+/** Normalize a system-prompt value to string[]. oh-my-pi's runtime returns
+ *  `string[]` from getSystemPrompt()/Context.systemPrompt even though the
+ *  published pi-ai type says `string`; accept both so an upstream type change
+ *  in either direction doesn't break the bridge. */
+export function toPromptArray(
+  value: string | string[] | null | undefined,
+): string[] {
+  if (value == null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
 // pi-ai user content blocks, structurally (published types are a union that
 // varies by message role; the fields we read are stable at runtime).
 interface ContentBlockLike {

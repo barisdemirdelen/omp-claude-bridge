@@ -33,6 +33,7 @@ import {
   buildSystemPromptAppend,
   extractUserPrompt,
   extractUserPromptBlocks,
+  toPromptArray,
   wrapPromptStream,
 } from "./prompt.js";
 import {
@@ -257,14 +258,9 @@ export function createStreamClaudeAgentSdk(
     const appendSystemPrompt =
       runtime.providerSettings.appendSystemPrompt !== false;
 
-    // pi-ai's published Context.systemPrompt type is `string`, but oh-my-pi's
-    // runtime actually sends `string[]`.
-    const systemPromptParts = context.systemPrompt as unknown as
-      | string[]
-      | undefined;
     const systemPromptAppend = buildSystemPromptAppend(
       appendSystemPrompt,
-      systemPromptParts?.join("\n\n"),
+      toPromptArray(context.systemPrompt).join("\n\n"),
     );
 
     const settingSources: SettingSource[] | undefined = appendSystemPrompt
@@ -322,7 +318,7 @@ export function createStreamClaudeAgentSdk(
     );
 
     let wasAborted = false;
-    const sdkQuery: Query = query({ prompt, options: queryOptions });
+    const sdkQuery: Query = runtime.queryFn({ prompt, options: queryOptions });
     queryCtx.activeQuery = sdkQuery;
     activeQueryContexts.add(queryCtx);
 
@@ -447,7 +443,7 @@ export function createStreamClaudeAgentSdk(
               resume: resumeId,
               ...makeCliDebugOptions("continuation"),
             };
-            const contQuery = query({
+            const contQuery = runtime.queryFn({
               prompt: steerPrompt,
               options: contOptions,
             });

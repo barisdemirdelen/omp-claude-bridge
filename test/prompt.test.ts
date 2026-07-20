@@ -5,6 +5,7 @@ import {
   buildSystemPromptAppend,
   extractUserPrompt,
   extractUserPromptBlocks,
+  toPromptArray,
 } from "../prompt.js";
 
 type Messages = Context["messages"];
@@ -106,5 +107,21 @@ describe("buildSystemPromptAppend", () => {
     expect(result.startsWith(TOOL_NAMING_CLARIFICATION)).toBe(true);
     expect(result).toContain("<available_skills>skill-list</available_skills>");
     expect(result).not.toContain("postamble");
+  });
+});
+
+describe("toPromptArray", () => {
+  test("wraps a single string", () => {
+    expect(toPromptArray("only")).toEqual(["only"]);
+  });
+  test("passes an array through unchanged", () => {
+    expect(toPromptArray(["a", "b"])).toEqual(["a", "b"]);
+  });
+  test("returns [] for null/undefined", () => {
+    expect(toPromptArray(null)).toEqual([]);
+    expect(toPromptArray(undefined)).toEqual([]);
+  });
+  test("keeps an empty string as a single element", () => {
+    expect(toPromptArray("")).toEqual([""]);
   });
 });

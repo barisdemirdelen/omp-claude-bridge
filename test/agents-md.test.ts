@@ -31,6 +31,24 @@ describe("sanitizeAgentsContent", () => {
     expect(sanitizeAgentsContent("prompt and compare")).toBe(
       "prompt and compare",
     );
+    // Word boundary protects tokens that merely contain "omp".
+    expect(sanitizeAgentsContent("stomp and romp")).toBe("stomp and romp");
+  });
+
+  test("rewrites a standalone .omp dotdir to .claude (no trailing slash)", () => {
+    // Regression: without a trailing slash or a preceding word char, `.omp`
+    // used to fall through to the bare-word rule and become `.environment`.
+    expect(sanitizeAgentsContent("the .omp dir")).toBe("the .claude dir");
+    expect(sanitizeAgentsContent("see .omp done")).toBe("see .claude done");
+  });
+
+  test("rewrites .omp consistently across path shapes and case", () => {
+    expect(sanitizeAgentsContent("~/.omp/agent")).toBe("~/.claude/agent");
+    expect(sanitizeAgentsContent(".omp/claude-bridge.json")).toBe(
+      ".claude/claude-bridge.json",
+    );
+    expect(sanitizeAgentsContent("x.omp")).toBe("x.claude");
+    expect(sanitizeAgentsContent("run OMP now")).toBe("run environment now");
   });
 });
 

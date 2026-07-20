@@ -8,7 +8,6 @@ import type {
   ToolRenderResultOptions,
 } from "@earendil-works/pi-coding-agent";
 import {
-  query,
   type SDKMessage,
   type SettingSource,
 } from "@anthropic-ai/claude-agent-sdk";
@@ -158,7 +157,7 @@ export async function promptAndWait(
     `skills=${Boolean(skillsBlock)} promptLen=${prompt.length}`,
   );
 
-  const sdkQuery = query({
+  const sdkQuery = runtime.queryFn({
     prompt,
     options: {
       cwd,

@@ -40,10 +40,11 @@ export function extractAgentsAppend(): string | undefined {
 }
 
 export function sanitizeAgentsContent(content: string): string {
-  let sanitized = content;
-  sanitized = sanitized.replace(/~\/\.omp\b/gi, "~/.claude");
-  sanitized = sanitized.replace(/(^|[\s'"`])\.omp\//g, "$1.claude/");
-  sanitized = sanitized.replace(/\b\.omp\b/gi, ".claude");
-  sanitized = sanitized.replace(/\bomp\b/gi, "environment");
-  return sanitized;
+  // Order matters: rewrite the `.omp` dotdir (paths and bare references) to
+  // `.claude` first, so its `omp` isn't caught by the bare-word rule below and
+  // turned into `.environment`. `\.omp\b` covers `~/.omp`, `.omp/`, and a
+  // standalone `.omp` alike; `\b` keeps it from touching tokens like `foo.omplex`.
+  return content
+    .replace(/\.omp\b/gi, ".claude")
+    .replace(/\bomp\b/gi, "environment");
 }

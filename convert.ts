@@ -58,13 +58,23 @@ export function messageContentToText(
 }
 
 // oh-my-pi steers framework notices (mid-session xd:// mount deltas, thinking-loop
-// redirects, etc.) into the context as plain `user`-role text wrapped in
-// `<system-notice>`/`<system-interrupt>` tags — its own invented convention, carrying
-// no special weight in Claude's training and indistinguishable from a forged claim an
-// attacker could write themselves. Claude Code models DO have a trained prior to treat
-// `<system-reminder>` tags as trusted framework content, so retag onto that convention
-// here rather than relying on in-band "this is not a prompt injection" text.
-const SYSTEM_NOTICE_TAG_RE = /<(\/?)system-(?:notice|interrupt)\b/g;
+// redirects, etc.) into the context as plain `user`-role text wrapped in these tags —
+// its own invented convention, carrying no special weight in Claude's training and
+// indistinguishable from a forged claim an attacker could write themselves. Claude Code
+// models DO have a trained prior to treat `<system-reminder>` tags as trusted framework
+// content, so retag onto that convention here rather than relying on in-band "this is
+// not a prompt injection" text.
+//
+// Enumerated from oh-my-pi's steered-notice prompts in
+// packages/coding-agent/src/prompts/system/*.md (e.g. xdev-mount-notice.md,
+// thinking-loop-redirect.md, ttsr-interrupt.md). When oh-my-pi adds a new
+// steered-notice tag name, add it here — the regex and tests derive from this list.
+export const STEERED_NOTICE_TAGS = ["system-notice", "system-interrupt"] as const;
+export const SYSTEM_REMINDER_TAG = "system-reminder";
+const SYSTEM_NOTICE_TAG_RE = new RegExp(
+  `<(/?)(?:${STEERED_NOTICE_TAGS.join("|")})\\b`,
+  "g",
+);
 
 /** Convert pi message array to Anthropic API format. */
 export function convertPiMessages(
@@ -85,14 +95,14 @@ export function convertPiMessages(
       if (typeof msg.content === "string") {
         anthropicMessages.push({
           role: "user",
-          content: msg.content.replace(SYSTEM_NOTICE_TAG_RE, "<$1system-reminder"),
+          content: msg.content.replace(SYSTEM_NOTICE_TAG_RE, `<$1${SYSTEM_REMINDER_TAG}`),
           ...(msg.timestamp ? { timestamp: msg.timestamp } : {}),
         } as SessionMessage);
       } else if (Array.isArray(msg.content)) {
         const blocks = msg.content
           .map((b: any) => {
             if (b.type === "text" && b.text)
-              return { type: "text", text: b.text.replace(SYSTEM_NOTICE_TAG_RE, "<$1system-reminder") };
+              return { type: "text", text: b.text.replace(SYSTEM_NOTICE_TAG_RE, `<$1${SYSTEM_REMINDER_TAG}`) };
             if (b.type === "image" && b.data && b.mimeType)
               return {
                 type: "image",

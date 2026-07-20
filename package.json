@@ -9,7 +9,8 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "check": "bun run typecheck && bun test"
   },
   "type": "module",
   "dependencies": {
