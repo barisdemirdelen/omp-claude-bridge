@@ -39,9 +39,9 @@ export function tryParseJson(path: string): Partial<Config> {
   }
 }
 
-export function loadConfig(cwd: string): Config {
+export function loadConfig(cwd: string, homeDir: string = homedir()): Config {
   const global = tryParseJson(
-    join(homedir(), ".omp", "agent", "claude-bridge.json"),
+    join(homeDir, ".omp", "agent", "claude-bridge.json"),
   );
   const project = tryParseJson(join(cwd, ".omp", "claude-bridge.json"));
   return {

@@ -7,7 +7,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": ["node"],
+    "types": ["node", "bun"],
     "strict": false,
     "skipLibCheck": true,
     "noUnusedLocals": true,
