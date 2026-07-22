@@ -33,7 +33,6 @@ import {
   buildSystemPromptAppend,
   extractUserPrompt,
   extractUserPromptBlocks,
-  toPromptArray,
   wrapPromptStream,
 } from "./prompt.js";
 import {
@@ -260,7 +259,7 @@ export function createStreamClaudeAgentSdk(
 
     const systemPromptAppend = buildSystemPromptAppend(
       appendSystemPrompt,
-      toPromptArray(context.systemPrompt).join("\n\n"),
+      context.systemPrompt as string | string[] | undefined,
     );
 
     const settingSources: SettingSource[] | undefined = appendSystemPrompt
