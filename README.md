@@ -7,6 +7,21 @@ An [oh-my-pi](https://github.com/earendil-works/oh-my-pi) (`omp`) extension that
 
 > **FYI:** Anthropic [announced and then unannounced](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan) a change to how tools built on the Agent SDK (like this one) would be billed. As of June 15, 2026 it uses subscription quota just like Claude Code direct does.
 
+## How this differs from omp's built-in Claude provider
+
+omp ships a native Anthropic provider that already bills Opus/Sonnet/Haiku against a Claude Pro/Max subscription. This extension does **not** replace it — it takes an architecturally opposite approach, and for plain model access the built-in provider is usually the better choice.
+
+- **Built-in provider** speaks the Anthropic Messages API directly over HTTP. omp runs *its own* agent loop, system prompt, and tools, streaming the raw model. It's fully integrated with omp's model catalog, credential rotation, usage/rate-limit tracking, and prompt-cache management.
+- **This extension** spawns the **real `claude` binary** via the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript) and drives it. Claude Code's own agent loop, system prompt, native tools, and skills are in play; omp's tools are bridged in as MCP tools (`mcp__custom-tools__*`) and Claude Code's tool calls/results are mapped back into omp's TUI. Conversation state lives in Claude Code's session files.
+
+What that means in practice:
+
+- **Subscription billing isn't the differentiator.** Both let you run Opus/Sonnet/Haiku on your Pro/Max plan, so that alone is no reason to pick one over the other.
+- **The bridge runs *Claude Code*, not omp-driving-the-model.** You get Claude Code's native behavior and skills — which is exactly what makes the [AskClaude](#askclaude-tool) delegation tool possible: handing a task or question to a real Claude Code instance for a second opinion, review, or isolated sub-run.
+- **Tradeoffs.** The bridge carries subprocess overhead and re-implements only a subset of omp's provider integration (catalog, usage, rotation, cache management); it also has some known edge-case limitations. The built-in provider has none of that indirection.
+
+**Rule of thumb:** if you just want Opus/Sonnet as a model in omp, the built-in provider is simpler and more deeply integrated. Reach for this extension when you specifically want Claude Code's own agent loop and skills, or the AskClaude delegation workflow.
+
 ## Attribution
 
 This is a port of [`pi-claude-bridge`](https://github.com/elidickinson/pi-claude-bridge) by [Eli Dickinson](https://github.com/elidickinson), which targets the [`pi`](https://pi.dev) coding agent. This fork adapts it to `oh-my-pi`'s extension API, event names, and config paths.
